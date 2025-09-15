@@ -17,7 +17,7 @@
 
 | Info       | Description     |
 |------------|-----------------|
-| Title      | MediBuddy    |
+| Title      | MediBuddy: A Personal Health Assistant    |
 | System URL | [link_to_system](link_to_system) |
 | Video URL  | [link_to_video](link_to_video)   |
 
