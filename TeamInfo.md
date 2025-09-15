@@ -17,7 +17,7 @@
 
 | Info       | Description     |
 |------------|-----------------|
-| Title      | ProjectTitle    |
+| Title      | MediBuddy    |
 | System URL | [link_to_system](link_to_system) |
 | Video URL  | [link_to_video](link_to_video)   |
 
