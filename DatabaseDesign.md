@@ -19,35 +19,7 @@
    * [prescription](#prescription)
    * [reminder](#reminder)
    * [emergency_contact](#emergency_contact)
-
----
-
-## Database & Safety Drops
-
-```sql
--- Create and select database
-CREATE DATABASE IF NOT EXISTS aloo
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_0900_ai_ci;
-USE aloo;
-
--- Safety drops (reverse dependency order)
-DROP TABLE IF EXISTS emergency_contact;
-DROP TABLE IF EXISTS reminder;
-DROP TABLE IF EXISTS prescription;
-DROP TABLE IF EXISTS side_effect;
-DROP TABLE IF EXISTS notification_prefs;
-DROP TABLE IF EXISTS drug;
-
-DROP TABLE IF EXISTS disease_symptom;
-DROP TABLE IF EXISTS doctor;
-DROP TABLE IF EXISTS symptom;
-DROP TABLE IF EXISTS disease;
-DROP TABLE IF EXISTS specialty;
-
-DROP TABLE IF EXISTS `user`;
-```
-
+   
 ---
 
 ## Core Clinical Schema
