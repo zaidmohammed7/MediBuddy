@@ -33,7 +33,7 @@ CREATE TABLE specialty (
     specialty_id   CHAR(36)       NOT NULL,
     specialty_name VARCHAR(100)   NOT NULL UNIQUE,
     PRIMARY KEY (specialty_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -52,7 +52,7 @@ CREATE TABLE disease (
         FOREIGN KEY (specialty_id) REFERENCES specialty (specialty_id)
         ON DELETE SET NULL
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -66,7 +66,7 @@ CREATE TABLE symptom (
     symptom_id      CHAR(36)       NOT NULL,
     symptom_name    VARCHAR(255)   NOT NULL UNIQUE,
     PRIMARY KEY (symptom_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -92,7 +92,7 @@ CREATE TABLE doctor (
         FOREIGN KEY (specialty_id) REFERENCES specialty (specialty_id)
         ON DELETE SET NULL
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -116,7 +116,7 @@ CREATE TABLE disease_symptom (
         FOREIGN KEY (symptom_id) REFERENCES symptom (symptom_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -137,7 +137,7 @@ CREATE TABLE `user` (
     preferred_window_end     TIME          NULL,
     PRIMARY KEY (user_id),
     UNIQUE KEY uq_user_email (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 
 ALTER TABLE `user`
   ADD CONSTRAINT chk_user_window_range
@@ -164,7 +164,7 @@ CREATE TABLE notification_prefs (
         FOREIGN KEY (user_id) REFERENCES `user` (user_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -181,7 +181,7 @@ CREATE TABLE drug (
     PRIMARY KEY (drug_id),
     UNIQUE KEY uq_drug_name (name),
     UNIQUE KEY uq_rxnorm_code (rxnorm_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -201,7 +201,7 @@ CREATE TABLE side_effect (
         FOREIGN KEY (drug_id) REFERENCES drug (drug_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -230,7 +230,7 @@ CREATE TABLE prescription (
         FOREIGN KEY (drug_id) REFERENCES drug (drug_id)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -257,7 +257,7 @@ CREATE TABLE reminder (
         FOREIGN KEY (rx_id) REFERENCES prescription (rx_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
 
 ---
@@ -281,5 +281,5 @@ CREATE TABLE emergency_contact (
         FOREIGN KEY (user_id) REFERENCES `user` (user_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 ```
