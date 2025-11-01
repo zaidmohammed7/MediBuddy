@@ -1,0 +1,1 @@
+In our stage 2 revisions, we've removed foreign keys from our UML diagram as well as adding names to each relationship.
