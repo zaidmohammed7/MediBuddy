@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>MediBuddy - Reminders</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <!-- Top nav -->
+    <header class="top-nav">
+      <div class="top-nav-left">
+        <div class="brand">MediBuddy</div>
+        <nav class="top-links">
+          <a href="{{ url_for('index') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
+          <a href="{{ url_for('prescriptions') }}" class="nav-link {% if active_page == 'prescriptions' %}active{% endif %}">Prescriptions</a>
+          <a href="{{ url_for('reminders') }}" class="nav-link {% if active_page == 'reminders' %}active{% endif %}">Reminders</a>
+          <a href="{{ url_for('chatbot') }}" class="nav-link {% if active_page == 'chatbot' %}active{% endif %}">Chatbot</a>
+          <a href="{{ url_for('settings') }}" class="nav-link {% if active_page == 'settings' %}active{% endif %}">Settings</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="reminders-shell">
+      <!-- Left: calendar card -->
+      <section class="card calendar-card">
+        <h1 class="card-title">Calendar</h1>
+
+        <div class="calendar-header">
+          <span>Month ▾ | Today</span>
+          <span>◀ September 2025 ▶</span>
+        </div>
+
+        <div class="calendar-toolbar">
+          Simplified calendar grid – dummy layout (no real data yet)
+        </div>
+
+        <div class="calendar-grid">
+          <div class="calendar-grid-inner">
+            <!-- Header row -->
+            <div class="calendar-row calendar-header-row">
+              <div class="calendar-cell">Sun</div>
+              <div class="calendar-cell">Mon</div>
+              <div class="calendar-cell">Tue</div>
+              <div class="calendar-cell">Wed</div>
+              <div class="calendar-cell">Thu</div>
+              <div class="calendar-cell">Fri</div>
+              <div class="calendar-cell">Sat</div>
+            </div>
+
+            <!-- Dummy week rows -->
+            <div class="calendar-row">
+              <div class="calendar-cell"></div>
+              <div class="calendar-cell"></div>
+              <div class="calendar-cell">1</div>
+              <div class="calendar-cell">2</div>
+              <div class="calendar-cell">3</div>
+              <div class="calendar-cell">4</div>
+              <div class="calendar-cell">5</div>
+            </div>
+
+            <div class="calendar-row">
+              <div class="calendar-cell">6</div>
+              <div class="calendar-cell">7</div>
+              <div class="calendar-cell">
+                8
+                <div class="calendar-event calendar-event-blue">
+                  Metformin 8:00
+                </div>
+              </div>
+              <div class="calendar-cell">9</div>
+              <div class="calendar-cell">
+                10
+                <div class="calendar-event calendar-event-green">
+                  Lisinopril 21:00
+                </div>
+              </div>
+              <div class="calendar-cell">11</div>
+              <div class="calendar-cell">12</div>
+            </div>
+
+            <!-- Remaining rows left simple -->
+            <div class="calendar-row">
+              <div class="calendar-cell">13</div>
+              <div class="calendar-cell">14</div>
+              <div class="calendar-cell">15</div>
+              <div class="calendar-cell">16</div>
+              <div class="calendar-cell">17</div>
+              <div class="calendar-cell">18</div>
+              <div class="calendar-cell">19</div>
+            </div>
+
+            <div class="calendar-row">
+              <div class="calendar-cell">20</div>
+              <div class="calendar-cell">21</div>
+              <div class="calendar-cell">22</div>
+              <div class="calendar-cell">23</div>
+              <div class="calendar-cell">24</div>
+              <div class="calendar-cell">25</div>
+              <div class="calendar-cell">26</div>
+            </div>
+
+            <div class="calendar-row">
+              <div class="calendar-cell">27</div>
+              <div class="calendar-cell">28</div>
+              <div class="calendar-cell">29</div>
+              <div class="calendar-cell">30</div>
+              <div class="calendar-cell"></div>
+              <div class="calendar-cell"></div>
+              <div class="calendar-cell"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: sidebar controls -->
+      <aside class="card reminders-sidebar">
+        <section>
+          <h2 class="sidebar-section-title">Add reminder</h2>
+          <input
+            type="text"
+            class="sidebar-input"
+            placeholder="Medication name"
+          />
+          <input
+            type="text"
+            class="sidebar-input"
+            placeholder="Time (e.g. 08:00)"
+          />
+          <input
+            type="text"
+            class="sidebar-input"
+            placeholder="Recurrence (e.g. daily)"
+          />
+          <button class="sidebar-button">Save</button>
+        </section>
+
+        <section>
+          <h2 class="sidebar-section-title">Exports</h2>
+          <button class="sidebar-button secondary">Download .ics</button>
+          <button class="sidebar-button secondary" style="margin-top: 6px;">
+            Sync Google Calendar
+          </button>
+        </section>
+
+        <section>
+          <h2 class="sidebar-section-title">Stock Tracking</h2>
+          <input
+            type="text"
+            class="sidebar-input"
+            placeholder="Adjust quantity (+ / -)"
+          />
+          <button class="sidebar-button secondary">Apply</button>
+        </section>
+      </aside>
+    </main>
+  </body>
+</html>

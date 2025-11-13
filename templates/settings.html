@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>MediBuddy - Settings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <!-- Top nav -->
+    <header class="top-nav">
+      <div class="top-nav-left">
+        <div class="brand">MediBuddy</div>
+        <nav class="top-links">
+          <a href="{{ url_for('index') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
+          <a href="{{ url_for('prescriptions') }}" class="nav-link {% if active_page == 'prescriptions' %}active{% endif %}">Prescriptions</a>
+          <a href="{{ url_for('reminders') }}" class="nav-link {% if active_page == 'reminders' %}active{% endif %}">Reminders</a>
+          <a href="{{ url_for('chatbot') }}" class="nav-link {% if active_page == 'chatbot' %}active{% endif %}">Chatbot</a>
+          <a href="{{ url_for('settings') }}" class="nav-link {% if active_page == 'settings' %}active{% endif %}">Settings</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="settings-shell">
+      <!-- Left: sidebar menu -->
+      <aside class="settings-sidebar">
+        <div class="settings-sidebar-title">Settings</div>
+        <div class="settings-menu">
+          <button class="settings-menu-item active">Profile</button>
+          <button class="settings-menu-item">Notifications</button>
+          <button class="settings-menu-item">Emergency Contact</button>
+          <button class="settings-menu-item">Calendar Sync</button>
+          <button class="settings-menu-item">Data &amp; Privacy</button>
+        </div>
+      </aside>
+
+      <!-- Right: main content -->
+      <section class="settings-main">
+        <!-- Profile -->
+        <h1 class="settings-section-title">Profile</h1>
+
+        <div class="settings-row">
+          <div class="settings-field">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-input" />
+          </div>
+          <div class="settings-field">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" />
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-field">
+            <label class="form-label">Time zone</label>
+            <input type="text" class="form-input" />
+          </div>
+          <div class="settings-field">
+            <label class="form-label">Preferred reminder windows</label>
+            <input type="text" class="form-input" />
+          </div>
+        </div>
+
+        <button class="settings-save-btn">Save profile</button>
+
+        <!-- Notifications -->
+        <h2 class="settings-section-title" style="margin-top: 24px;">
+          Notifications
+        </h2>
+
+        <div class="settings-row" style="align-items: center;">
+          <div class="settings-field">
+            Email reminders
+          </div>
+          <button class="toggle on">
+            <span class="toggle-thumb"></span>
+          </button>
+        </div>
+
+        <div class="settings-row" style="align-items: center;">
+          <div class="settings-field">
+            Missed-dose summary
+          </div>
+          <button class="toggle off">
+            <span class="toggle-thumb"></span>
+          </button>
+        </div>
+
+        <button class="settings-save-btn secondary">
+          Save notification settings
+        </button>
+
+        <!-- Emergency contact -->
+        <h2 class="settings-section-title" style="margin-top: 24px;">
+          Emergency Contact
+        </h2>
+
+        <div class="settings-row">
+          <div class="settings-field">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-input" />
+          </div>
+          <div class="settings-field">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" />
+          </div>
+          <div class="settings-field">
+            <label class="form-label">Trigger</label>
+            <input type="text" class="form-input" placeholder="e.g. 3 missed doses" />
+          </div>
+        </div>
+
+        <button class="settings-save-btn secondary">
+          Save emergency contact
+        </button>
+
+        <!-- Calendar sync -->
+        <h2 class="settings-section-title" style="margin-top: 24px;">
+          Calendar Sync
+        </h2>
+
+        <div class="settings-row">
+          <button class="settings-save-btn secondary">
+            Download .ics
+          </button>
+          <button class="settings-save-btn secondary">
+            Connect Google Calendar
+          </button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

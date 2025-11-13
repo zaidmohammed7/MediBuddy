@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>MediBuddy - Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <header class="top-nav">
+      <div class="top-nav-left">
+        <div class="brand">MediBuddy</div>
+        <nav class="top-links">
+          <a href="{{ url_for('index') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
+          <a href="{{ url_for('prescriptions') }}" class="nav-link {% if active_page == 'prescriptions' %}active{% endif %}">Prescriptions</a>
+          <a href="{{ url_for('reminders') }}" class="nav-link {% if active_page == 'reminders' %}active{% endif %}">Reminders</a>
+          <a href="{{ url_for('chatbot') }}" class="nav-link {% if active_page == 'chatbot' %}active{% endif %}">Chatbot</a>
+          <a href="{{ url_for('settings') }}" class="nav-link {% if active_page == 'settings' %}active{% endif %}">Settings</a>
+        </nav>
+      </div>
+    </header>
+
+
+
+    <main class="shell">
+      <!-- Left: chat -->
+      <section class="chat-panel">
+        <h1 class="panel-title">Symptom Assistant</h1>
+
+        <div id="chat-window" class="chat-window">
+          <!-- Chat bubbles injected here -->
+          <div class="bubble bubble-assistant">
+            <div class="bubble-label">Assistant</div>
+            <div class="bubble-text">
+              Hi! Tell me what you’re feeling - symptoms, duration, and anything
+              else that seems relevant. I’ll suggest possible conditions and
+              which type of doctor you might want to see.
+            </div>
+          </div>
+        </div>
+
+        <form id="chat-form" class="chat-input-row">
+          <input
+            id="chat-input"
+            type="text"
+            placeholder="Type your symptoms..."
+            autocomplete="off"
+          />
+          <button type="submit">Send</button>
+        </form>
+
+        <div class="location-row">
+          <div>
+            <label class="location-label">City</label>
+            <input id="location-city" type="text" placeholder="e.g. Chicago" />
+          </div>
+          <div>
+            <label class="location-label">ZIP</label>
+            <input id="location-zip" type="text" placeholder="e.g. 60607" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: summary + doctors -->
+      <aside class="side-panel">
+        <!-- Summary card -->
+        <section class="card">
+          <h2 class="card-title">Summary</h2>
+          <div id="summary-content" class="summary-content">
+            <p class="muted">
+              I’ll summarize likely conditions and next steps here after you
+              send a message.
+            </p>
+          </div>
+        </section>
+
+        <!-- Recommended doctors -->
+        <section class="card">
+          <h2 class="card-title">Recommended Doctors</h2>
+
+          <div class="doctor-filters">
+            <div class="muted tiny">
+              Uses the city / ZIP you’ve entered below the chat box.
+            </div>
+          </div>
+
+          <div id="doctors-list" class="doctors-list">
+            <p class="muted">No recommendations yet. Send a message to begin.</p>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <script>
+      const chatWindow = document.getElementById("chat-window");
+      const chatForm = document.getElementById("chat-form");
+      const chatInput = document.getElementById("chat-input");
+      const summaryContent = document.getElementById("summary-content");
+      const doctorsList = document.getElementById("doctors-list");
+      const cityInput = document.getElementById("location-city");
+      const zipInput = document.getElementById("location-zip");
+
+      function appendBubble(role, text) {
+        const bubble = document.createElement("div");
+        bubble.className =
+          "bubble " + (role === "user" ? "bubble-user" : "bubble-assistant");
+
+        const label = document.createElement("div");
+        label.className = "bubble-label";
+        label.textContent = role === "user" ? "You" : "Assistant";
+
+        const body = document.createElement("div");
+        body.className = "bubble-text";
+        body.textContent = text;
+
+        bubble.appendChild(label);
+        bubble.appendChild(body);
+        chatWindow.appendChild(bubble);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+      }
+
+      function renderSummary(summary) {
+        summaryContent.innerHTML = "";
+
+        if (!summary || !summary.sections) {
+          summaryContent.innerHTML =
+            `<p class="muted">I'll summarize likely conditions and next steps here after you send a message.</p>`;
+          return;
+        }
+
+        const s = summary.sections;
+
+        // Likely condition
+        const likely = document.createElement("p");
+        likely.innerHTML = `<strong>Most likely condition:</strong><br>${s.likely}`;
+        summaryContent.appendChild(likely);
+
+        // Why
+        const whyHead = document.createElement("p");
+        whyHead.innerHTML = `<strong>Why this may fit:</strong>`;
+        summaryContent.appendChild(whyHead);
+
+        const whyList = document.createElement("ul");
+        whyList.className = "summary-list";
+        s.why.forEach((line) => {
+          const li = document.createElement("li");
+          li.textContent = line;
+          whyList.appendChild(li);
+        });
+        summaryContent.appendChild(whyList);
+
+        // Recognized symptoms
+        if (s.symptoms && s.symptoms.length > 0) {
+          const sym = document.createElement("p");
+          sym.innerHTML =
+            `<strong>Symptoms recognized:</strong><br>${s.symptoms.join(", ")}`;
+          summaryContent.appendChild(sym);
+        }
+
+        // Specialty suggestion
+        const spec = document.createElement("p");
+        spec.innerHTML = `<strong>Suggested clinician:</strong><br>${s.specialty}`;
+        summaryContent.appendChild(spec);
+
+        // Disclaimer
+        const disc = document.createElement("p");
+        disc.className = "disclaimer";
+        disc.textContent = s.disclaimer;
+        summaryContent.appendChild(disc);
+      }
+
+
+      function renderDoctors(doctors) {
+        doctorsList.innerHTML = "";
+
+        if (!doctors || doctors.length === 0) {
+          const p = document.createElement("p");
+          p.className = "muted";
+          p.textContent =
+            "No doctor recommendations yet or none found for the current search.";
+          doctorsList.appendChild(p);
+          return;
+        }
+
+        doctors.forEach((doc) => {
+          const card = document.createElement("div");
+          card.className = "doctor-card";
+
+          const name = document.createElement("div");
+          name.className = "doctor-name";
+          name.textContent = `${doc.name} — ${doc.specialty}`;
+
+          const details = document.createElement("div");
+          details.className = "doctor-details";
+          const addrParts = [doc.facility, doc.city, doc.state]
+            .filter(Boolean)
+            .join(" • ");
+          details.textContent = `${addrParts} • ${doc.phone || "N/A"}`;
+
+          const zipLine = document.createElement("div");
+          zipLine.className = "doctor-zip tiny";
+          if (doc.zip) {
+            zipLine.textContent = `ZIP: ${doc.zip}`;
+          }
+
+          card.appendChild(name);
+          card.appendChild(details);
+          if (doc.zip) card.appendChild(zipLine);
+
+          doctorsList.appendChild(card);
+        });
+      }
+
+      chatForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        appendBubble("user", message);
+        chatInput.value = "";
+        chatInput.focus();
+
+        // Show a lightweight "thinking" bubble
+        const thinkingBubble = document.createElement("div");
+        thinkingBubble.className = "bubble bubble-assistant bubble-thinking";
+        const label = document.createElement("div");
+        label.className = "bubble-label";
+        label.textContent = "Assistant";
+        const text = document.createElement("div");
+        text.className = "bubble-text";
+        text.textContent = "Analyzing your symptoms...";
+        thinkingBubble.appendChild(label);
+        thinkingBubble.appendChild(text);
+        chatWindow.appendChild(thinkingBubble);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        const payload = {
+          message: message,
+          city: cityInput.value,
+          zipcode: zipInput.value,
+        };
+
+        try {
+          const resp = await fetch("/chatbot", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: userMessage,
+              city: cityValue,
+              zipcode: zipValue,
+            }),
+          });
+
+          const data = await resp.json();
+          chatWindow.removeChild(thinkingBubble);
+
+          if (!resp.ok || data.error) {
+            appendBubble(
+              "assistant",
+              data.error ||
+                "Sorry, something went wrong while processing your request."
+            );
+            return;
+          }
+
+          appendBubble("assistant", data.assistant_reply);
+          renderSummary(data.summary);
+          renderDoctors(data.doctors);
+        } catch (err) {
+          chatWindow.removeChild(thinkingBubble);
+          appendBubble(
+            "assistant",
+            "Sorry, I couldn't reach the server. Please try again."
+          );
+          console.error(err);
+        }
+      });
+    </script>
+  </body>
+</html>

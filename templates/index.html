@@ -1,1 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>MediBuddy - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <header class="top-nav">
+      <div class="top-nav-left">
+        <div class="brand">MediBuddy</div>
+        <nav class="top-links">
+          <a href="{{ url_for('index') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
+          <a href="{{ url_for('prescriptions') }}" class="nav-link {% if active_page == 'prescriptions' %}active{% endif %}">Prescriptions</a>
+          <a href="{{ url_for('reminders') }}" class="nav-link {% if active_page == 'reminders' %}active{% endif %}">Reminders</a>
+          <a href="{{ url_for('chatbot') }}" class="nav-link {% if active_page == 'chatbot' %}active{% endif %}">Chatbot</a>
+          <a href="{{ url_for('settings') }}" class="nav-link {% if active_page == 'settings' %}active{% endif %}">Settings</a>
+        </nav>
+      </div>
+    </header>
 
+    <main class="dashboard-shell">
+      <section class="alert-banner">
+        <div class="alert-title">Alerts</div>
+        <div class="alert-text">
+          • Low stock: Metformin (6 pills left) • Missed dose: Lisinopril • Interaction warning present
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="card">
+          <h2 class="dashboard-card-title">Active Prescriptions</h2>
+          <div class="dashboard-card-body">
+            <div>• Metformin 500mg</div>
+            <div>• Lisinopril 10mg</div>
+            <div>• Ibuprofen 200mg</div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="dashboard-card-title">Upcoming Reminders</h2>
+          <div class="dashboard-card-body">
+            <div>Today 8:00 AM — Metformin</div>
+            <div>Today 9:00 PM — Lisinopril</div>
+            <div>Tomorrow 8:00 AM — Metformin</div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="dashboard-card-title">Interaction Warnings</h2>
+          <div class="dashboard-card-body">
+            <div>• Ibuprofen ↔ Warfarin (risk: bleeding)</div>
+            <div>• Check labels for guidance</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="dashboard-bottom">
+        <article class="card">
+          <h2 class="dashboard-card-title">Adherence & Stock Trends</h2>
+          <div class="chart-placeholder">[Placeholder for line/bar chart]</div>
+        </article>
+
+        <article class="card">
+          <h2 class="dashboard-card-title">Recent Activity</h2>
+          <div class="dashboard-card-body">
+            <div>• Adjusted stock: Metformin (+10)</div>
+            <div>• Missed dose recorded: Lisinopril</div>
+            <div>• New reminder exported to calendar</div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

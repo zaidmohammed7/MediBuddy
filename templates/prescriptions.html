@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>MediBuddy - Prescriptions</title>
+   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <header class="top-nav">
+      <div class="top-nav-left">
+        <div class="brand">MediBuddy</div>
+        <nav class="top-links">
+          <a href="{{ url_for('index') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
+          <a href="{{ url_for('prescriptions') }}" class="nav-link {% if active_page == 'prescriptions' %}active{% endif %}">Prescriptions</a>
+          <a href="{{ url_for('reminders') }}" class="nav-link {% if active_page == 'reminders' %}active{% endif %}">Reminders</a>
+          <a href="{{ url_for('chatbot') }}" class="nav-link {% if active_page == 'chatbot' %}active{% endif %}">Chatbot</a>
+          <a href="{{ url_for('settings') }}" class="nav-link {% if active_page == 'settings' %}active{% endif %}">Settings</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="prescriptions-shell">
+      <section class="card prescriptions-list">
+        <h1 class="card-title">My Prescriptions</h1>
+        <input class="prescriptions-search" placeholder="Search by name / dosage / prescriber" />
+
+        <div class="prescription-item">
+          <div class="prescription-name">Metformin 500mg — 1 pill, twice daily</div>
+          <div class="prescription-meta">Qty: 60 • Refills: 2 • Added: 2025-09-10</div>
+        </div>
+
+        <div class="prescription-item">
+          <div class="prescription-name">Lisinopril 10mg — 1 pill, daily</div>
+          <div class="prescription-meta">Qty: 30 • Refills: 1 • Added: 2025-09-09</div>
+        </div>
+
+        <div class="prescription-item">
+          <div class="prescription-name">Ibuprofen 200mg — as needed</div>
+          <div class="prescription-meta">Qty: 24 • Refills: 0 • Added: 2025-09-08</div>
+        </div>
+      </section>
+
+      <!-- Right column -->
+      <section class="card prescriptions-detail">
+        <h1 class="card-title">Add / Edit Prescription</h1>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Drug name</label>
+            <input class="form-input" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Dosage</label>
+            <input class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Frequency</label>
+          <input class="form-input" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Quantity on hand</label>
+            <input type="number" class="form-input" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Refills</label>
+            <input type="number" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Upload Rx (Image/PDF)</label>
+          <input class="form-input" placeholder="Choose file…" />
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary">Save</button>
+          <button class="btn-secondary">Delete</button>
+        </div>
+
+        <div class="interaction-panel">
+          <p>• Ibuprofen ↔ Warfarin: Increased bleeding risk (see label)</p>
+          <p>• Metformin: No label interaction found with current list</p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
