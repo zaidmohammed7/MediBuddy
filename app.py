@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import traceback
 from typing import Any, Dict, List, Optional
+import os
+import uuid
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, redirect, url_for
+from dotenv import load_dotenv
+import mysql.connector
 
 from chatbot import (
     extract_symptoms,
@@ -14,6 +18,30 @@ from chatbot import (
 )
 
 app = Flask(__name__)
+
+load_dotenv("config/api.env")
+
+
+def get_db():
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            port=3306,
+            user="root",
+            password="admin",
+            database="aloo",
+        )
+        return conn
+    except Exception as e:
+        print("DB CONNECT ERROR:", repr(e))
+        raise
+
+
+
+# Demo IDs
+DEMO_USER_ID = "62bf9644-c587-11f0-a97c-cda7de604848"
+DEMO_DRUG_ID = "64c8a9c6-c587-11f0-a97c-cda7de604848"
+
 
 
 # ---------------------------------------------------------------------
@@ -37,6 +65,8 @@ def run_chat_pipeline(
 
     # 1) Extract symptoms
     recognized, unrecognized = extract_symptoms(user_input)
+
+    # print(recognized, unrecognized)
 
     # 2) Match diseases from DB
     disease_matches = match_diseases(recognized, top_n=3)
@@ -222,9 +252,157 @@ def signup() -> str:
     return render_template("signup.html")
 
 
-@app.route("/prescriptions")
+@app.route("/prescriptions", methods=["GET"])
 def prescriptions() -> str:
-    return render_template("prescriptions.html", active_page="prescriptions")
+    """List prescriptions for the demo user + load available drugs."""
+    conn = get_db()
+
+    # prescriptions
+    cur = conn.cursor(dictionary=True)
+    cur.execute(
+        """
+        SELECT p.rx_id,
+               p.frequency,
+               p.qty_on_hand,
+               p.refills,
+               p.rx_text,
+               d.name AS drug_name
+        FROM prescription p
+        JOIN drug d ON p.drug_id = d.drug_id
+        WHERE p.user_id = %s
+        """,
+        (DEMO_USER_ID,),
+    )
+    prescriptions = cur.fetchall()
+    cur.close()
+
+    # drugs for dropdown + management
+    cur2 = conn.cursor(dictionary=True)
+    cur2.execute("SELECT drug_id, name, rxnorm_code FROM drug ORDER BY name")
+    drugs = cur2.fetchall()
+    cur2.close()
+
+    conn.close()
+
+    return render_template(
+        "prescriptions.html",
+        active_page="prescriptions",
+        prescriptions=prescriptions,
+        drugs=drugs,
+    )
+
+
+@app.route("/drugs/create", methods=["POST"])
+def create_drug():
+    """CREATE: add a new drug to the drug table."""
+    name = request.form["drug_name"].strip()
+    rxnorm_code = request.form.get("rxnorm_code", "").strip() or None
+
+    if not name:
+        return redirect(url_for("prescriptions"))
+
+    drug_id = str(uuid.uuid4())
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO drug (drug_id, rxnorm_code, name)
+        VALUES (%s, %s, %s)
+        """,
+        (drug_id, rxnorm_code, name),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect(url_for("prescriptions"))
+
+
+@app.route("/drugs/<drug_id>/delete", methods=["POST"])
+def delete_drug(drug_id: str):
+    """DELETE: remove a drug (only works if no prescriptions reference it)."""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM drug WHERE drug_id = %s", (drug_id,))
+        conn.commit()
+    except Exception as e:
+        print("DRUG DELETE ERROR:", repr(e))
+        # ON DELETE RESTRICT will throw if there are prescriptions pointing at this drug
+    finally:
+        cur.close()
+        conn.close()
+
+    return redirect(url_for("prescriptions"))
+
+@app.route("/prescriptions/create", methods=["POST"])
+def create_prescription():
+    """CREATE: add a new prescription for the demo user."""
+    drug_id = request.form["drug_id"]      # <- from dropdown
+    frequency = request.form["frequency"]
+    qty_on_hand = int(request.form["qty_on_hand"])
+    refills = int(request.form["refills"])
+    rx_text = request.form.get("rx_text", "")
+
+    rx_id = str(uuid.uuid4())
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO prescription
+            (rx_id, user_id, drug_id, frequency, qty_on_hand, refills, rx_text)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """,
+        (rx_id, DEMO_USER_ID, drug_id, frequency, qty_on_hand, refills, rx_text),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect(url_for("prescriptions"))
+
+
+@app.route("/prescriptions/<rx_id>/update", methods=["POST"])
+def update_prescription(rx_id: str):
+    """UPDATE: edit an existing prescription."""
+    frequency = request.form["frequency"]
+    qty_on_hand = int(request.form["qty_on_hand"])
+    refills = int(request.form["refills"])
+    rx_text = request.form.get("rx_text", "")
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        UPDATE prescription
+        SET frequency = %s,
+            qty_on_hand = %s,
+            refills = %s,
+            rx_text = %s
+        WHERE rx_id = %s
+        """,
+        (frequency, qty_on_hand, refills, rx_text, rx_id),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect(url_for("prescriptions"))
+
+
+@app.route("/prescriptions/<rx_id>/delete", methods=["POST"])
+def delete_prescription(rx_id: str):
+    """DELETE: remove a prescription."""
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM prescription WHERE rx_id = %s", (rx_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect(url_for("prescriptions"))
 
 
 @app.route("/reminders")

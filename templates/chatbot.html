@@ -244,11 +244,7 @@
           const resp = await fetch("/chatbot", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: userMessage,
-              city: cityValue,
-              zipcode: zipValue,
-            }),
+            body: JSON.stringify(payload),
           });
 
           const data = await resp.json();
