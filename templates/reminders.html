@@ -4,9 +4,101 @@
     <meta charset="utf-8" />
     <title>MediBuddy - Reminders</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      .delete-btn {
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        font-size: 0.8rem;
+        margin-left: 5px;
+      }
+      .reminder-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+      }
+      .sidebar-select {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      
+      /* Calendar Grid */
+      .calendar-grid-inner {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #eee;
+      }
+      .calendar-row {
+        display: flex;
+        width: 100%;
+      }
+      .calendar-cell {
+        flex: 1;
+        min-height: 100px;
+        border-right: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+        padding: 5px;
+        position: relative;
+        background: #fff;
+        font-size: 0.9rem;
+        width: 14.28%;
+      }
+      .calendar-cell:last-child {
+        border-right: none;
+      }
+      .calendar-header-row .calendar-cell {
+        min-height: auto;
+        font-weight: bold;
+        background: #f9fafb;
+        text-align: center;
+        padding: 10px;
+      }
+      .calendar-day-number {
+        font-weight: bold;
+        margin-bottom: 5px;
+        display: block;
+        color: #333;
+        text-align: right;
+      }
+      .calendar-event {
+        font-size: 0.75rem;
+        padding: 2px 4px;
+        border-radius: 3px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        display: flex; 
+        justify-content: space-between;
+        align-items: center;
+      }
+      .calendar-event-blue { 
+        background-color: #e0f2fe; 
+        color: #0369a1; 
+      }
+      .empty-cell { 
+        background-color: #fafafa; 
+      }
+      .calendar-nav-link {
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+        padding: 0 10px;
+        font-size: 1.2rem;
+      }
+      .calendar-nav-link:hover {
+        color: #007bff;
+      }
+    </style>
   </head>
   <body>
-    <!-- Top nav -->
     <header class="top-nav">
       <div class="top-nav-left">
         <div class="brand">MediBuddy</div>
@@ -21,22 +113,41 @@
     </header>
 
     <main class="reminders-shell">
-      <!-- Left: calendar card -->
       <section class="card calendar-card">
         <h1 class="card-title">Calendar</h1>
 
         <div class="calendar-header">
-          <span>Month ▾ | Today</span>
-          <span>◀ September 2025 ▶</span>
+          <span>Month ▾ | <a href="{{ url_for('reminders') }}" style="text-decoration: none; color: inherit;">Today</a></span>
+          <span>
+            <a href="{{ url_for('reminders', month=prev_month, year=prev_year) }}" class="calendar-nav-link">◀</a>
+            {{ current_month_name }}
+            <a href="{{ url_for('reminders', month=next_month, year=next_year) }}" class="calendar-nav-link">▶</a>
+          </span>
         </div>
 
-        <div class="calendar-toolbar">
-          Simplified calendar grid – dummy layout (no real data yet)
+        <div style="margin-top: 20px; margin-bottom: 20px;">
+          <h3>Upcoming Reminders</h3>
+          {% if reminders %}
+            <div class="reminder-list">
+              {% for r in reminders %}
+                <div class="reminder-item">
+                  <div>
+                    <strong>{{ r.remind_time }}</strong> — {{ r.drug_name }} 
+                    <span style="color: gray; font-size: 0.9em;">({{ r.override_frequency or r.default_frequency }})</span>
+                  </div>
+                  <form action="{{ url_for('delete_reminder', reminder_id=r.reminder_id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="delete-btn" onclick="return confirm('Delete this reminder?')">✖</button>
+                  </form>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p style="color: gray; font-style: italic;">No reminders set.</p>
+          {% endif %}
         </div>
 
         <div class="calendar-grid">
           <div class="calendar-grid-inner">
-            <!-- Header row -->
             <div class="calendar-row calendar-header-row">
               <div class="calendar-cell">Sun</div>
               <div class="calendar-cell">Mon</div>
@@ -47,91 +158,51 @@
               <div class="calendar-cell">Sat</div>
             </div>
 
-            <!-- Dummy week rows -->
-            <div class="calendar-row">
-              <div class="calendar-cell"></div>
-              <div class="calendar-cell"></div>
-              <div class="calendar-cell">1</div>
-              <div class="calendar-cell">2</div>
-              <div class="calendar-cell">3</div>
-              <div class="calendar-cell">4</div>
-              <div class="calendar-cell">5</div>
-            </div>
-
-            <div class="calendar-row">
-              <div class="calendar-cell">6</div>
-              <div class="calendar-cell">7</div>
-              <div class="calendar-cell">
-                8
-                <div class="calendar-event calendar-event-blue">
-                  Metformin 8:00
-                </div>
+            {% for week in calendar_weeks %}
+              <div class="calendar-row">
+                {% for day in week %}
+                  {% if day %}
+                    <div class="calendar-cell">
+                      <span class="calendar-day-number">{{ day.day }}</span>
+                      {% for r in day.reminders %}
+                        <div class="calendar-event calendar-event-blue" title="{{ r.drug_name }} at {{ r.remind_time.strftime('%H:%M') }}">
+                          <span>{{ r.remind_time.strftime('%H:%M') }} {{ r.drug_name }}</span>
+                          <form action="{{ url_for('delete_reminder', reminder_id=r.reminder_id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="delete-btn" style="font-size: 0.6rem; margin-left: 2px; color: #0369a1;" onclick="return confirm('Delete?')">x</button>
+                          </form>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <div class="calendar-cell empty-cell"></div>
+                  {% endif %}
+                {% endfor %}
               </div>
-              <div class="calendar-cell">9</div>
-              <div class="calendar-cell">
-                10
-                <div class="calendar-event calendar-event-green">
-                  Lisinopril 21:00
-                </div>
-              </div>
-              <div class="calendar-cell">11</div>
-              <div class="calendar-cell">12</div>
-            </div>
-
-            <!-- Remaining rows left simple -->
-            <div class="calendar-row">
-              <div class="calendar-cell">13</div>
-              <div class="calendar-cell">14</div>
-              <div class="calendar-cell">15</div>
-              <div class="calendar-cell">16</div>
-              <div class="calendar-cell">17</div>
-              <div class="calendar-cell">18</div>
-              <div class="calendar-cell">19</div>
-            </div>
-
-            <div class="calendar-row">
-              <div class="calendar-cell">20</div>
-              <div class="calendar-cell">21</div>
-              <div class="calendar-cell">22</div>
-              <div class="calendar-cell">23</div>
-              <div class="calendar-cell">24</div>
-              <div class="calendar-cell">25</div>
-              <div class="calendar-cell">26</div>
-            </div>
-
-            <div class="calendar-row">
-              <div class="calendar-cell">27</div>
-              <div class="calendar-cell">28</div>
-              <div class="calendar-cell">29</div>
-              <div class="calendar-cell">30</div>
-              <div class="calendar-cell"></div>
-              <div class="calendar-cell"></div>
-              <div class="calendar-cell"></div>
-            </div>
+            {% endfor %}
           </div>
         </div>
       </section>
 
-      <!-- Right: sidebar controls -->
       <aside class="card reminders-sidebar">
         <section>
           <h2 class="sidebar-section-title">Add reminder</h2>
-          <input
-            type="text"
-            class="sidebar-input"
-            placeholder="Medication name"
-          />
-          <input
-            type="text"
-            class="sidebar-input"
-            placeholder="Time (e.g. 08:00)"
-          />
-          <input
-            type="text"
-            class="sidebar-input"
-            placeholder="Recurrence (e.g. daily)"
-          />
-          <button class="sidebar-button">Save</button>
+          <form action="{{ url_for('create_reminder') }}" method="POST">
+            <label style="font-size: 0.8rem; color: #666;">Medication</label>
+            <select name="rx_id" class="sidebar-select" required>
+              <option value="" disabled selected>Select Medication</option>
+              {% for p in prescriptions %}
+                <option value="{{ p.rx_id }}">{{ p.drug_name }}</option>
+              {% endfor %}
+            </select>
+
+            <label style="font-size: 0.8rem; color: #666;">Date</label>
+            <input type="date" name="remind_date" class="sidebar-input" required />
+
+            <label style="font-size: 0.8rem; color: #666;">Time</label>
+            <input type="time" name="remind_time" class="sidebar-input" required />
+
+            <button type="submit" class="sidebar-button">Save</button>
+          </form>
         </section>
 
         <section>
@@ -144,11 +215,7 @@
 
         <section>
           <h2 class="sidebar-section-title">Stock Tracking</h2>
-          <input
-            type="text"
-            class="sidebar-input"
-            placeholder="Adjust quantity (+ / -)"
-          />
+          <input type="text" class="sidebar-input" placeholder="Adjust quantity (+ / -)" />
           <button class="sidebar-button secondary">Apply</button>
         </section>
       </aside>

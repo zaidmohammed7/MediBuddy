@@ -4,6 +4,8 @@ import traceback
 from typing import Any, Dict, List, Optional
 import os
 import uuid
+import datetime
+import calendar
 
 from flask import Flask, jsonify, render_template, request, redirect, url_for
 from dotenv import load_dotenv
@@ -405,9 +407,150 @@ def delete_prescription(rx_id: str):
     return redirect(url_for("prescriptions"))
 
 
-@app.route("/reminders")
+@app.route("/reminders", methods=["GET"])
 def reminders() -> str:
-    return render_template("reminders.html", active_page="reminders")
+    """List reminders with a monthly calendar view."""
+    conn = get_db()
+
+    # Get reminders joined with drug info
+    cur = conn.cursor(dictionary=True)
+    cur.execute(
+        """
+        SELECT r.reminder_id, r.remind_time, r.override_frequency,
+               d.name AS drug_name, p.frequency AS default_frequency
+        FROM reminder r
+        JOIN prescription p ON r.rx_id = p.rx_id
+        JOIN drug d ON p.drug_id = d.drug_id
+        WHERE r.user_id = %s
+        ORDER BY r.remind_time ASC
+        """,
+        (DEMO_USER_ID,),
+    )
+    reminders_data = cur.fetchall()
+    cur.close()
+
+    # Get user prescriptions for the 'add' dropdown
+    cur2 = conn.cursor(dictionary=True)
+    cur2.execute(
+        """
+        SELECT p.rx_id, d.name AS drug_name 
+        FROM prescription p
+        JOIN drug d ON p.drug_id = d.drug_id
+        WHERE p.user_id = %s
+        ORDER BY d.name
+        """,
+        (DEMO_USER_ID,),
+    )
+    user_prescriptions = cur2.fetchall()
+    cur2.close()
+    conn.close()
+
+    # Calendar Setup
+    today = datetime.date.today()
+    try:
+        month = int(request.args.get("month", today.month))
+        year = int(request.args.get("year", today.year))
+    except (ValueError, TypeError):
+        month, year = today.month, today.year
+
+    # Navigation links
+    if month == 1:
+        prev_m, prev_y = 12, year - 1
+    else:
+        prev_m, prev_y = month - 1, year
+
+    if month == 12:
+        next_m, next_y = 1, year + 1
+    else:
+        next_m, next_y = month + 1, year
+
+    # Map reminders for O(1) lookup during grid construction
+    reminders_map = {}
+    for r in reminders_data:
+        if r["remind_time"]:
+            d_str = r["remind_time"].strftime("%Y-%m-%d")
+            reminders_map.setdefault(d_str, []).append(r)
+
+    # Build the calendar grid
+    start_weekday = datetime.date(year, month, 1).weekday()
+    start_col = (start_weekday + 1) % 7
+    _, days_in_month = calendar.monthrange(year, month)
+
+    calendar_weeks = []
+    current_week = [None] * start_col 
+
+    for day in range(1, days_in_month + 1):
+        d_str = datetime.date(year, month, day).strftime("%Y-%m-%d")
+        
+        current_week.append({
+            "day": day,
+            "date_str": d_str,
+            "reminders": reminders_map.get(d_str, [])
+        })
+
+        if len(current_week) == 7:
+            calendar_weeks.append(current_week)
+            current_week = []
+
+    if current_week:
+        while len(current_week) < 7:
+            current_week.append(None)
+        calendar_weeks.append(current_week)
+
+    return render_template(
+        "reminders.html",
+        active_page="reminders",
+        reminders=reminders_data,
+        prescriptions=user_prescriptions,
+        calendar_weeks=calendar_weeks,
+        current_month_name=datetime.date(year, month, 1).strftime("%B %Y"),
+        prev_month=prev_m,
+        prev_year=prev_y,
+        next_month=next_m,
+        next_year=next_y,
+        current_month=month,
+        current_year=year,
+    )
+
+
+@app.route("/reminders/create", methods=["POST"])
+def create_reminder():
+    rx_id = request.form["rx_id"]
+    date_str = request.form.get("remind_date")
+    time_str = request.form.get("remind_time")
+
+    if not date_str:
+        date_str = datetime.date.today().strftime("%Y-%m-%d")
+    
+    # Simple timestamp construction
+    full_ts = f"{date_str} {time_str}:00"
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO reminder (reminder_id, user_id, rx_id, remind_time)
+        VALUES (%s, %s, %s, %s)
+        """,
+        (str(uuid.uuid4()), DEMO_USER_ID, rx_id, full_ts),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect(url_for("reminders"))
+
+
+@app.route("/reminders/<reminder_id>/delete", methods=["POST"])
+def delete_reminder(reminder_id: str):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM reminder WHERE reminder_id = %s", (reminder_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect(url_for("reminders"))
 
 
 @app.route("/settings")
