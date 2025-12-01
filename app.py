@@ -7,7 +7,7 @@ import uuid
 import datetime
 import calendar
 
-from flask import Flask, jsonify, render_template, request, redirect, url_for
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
 import mysql.connector
 
@@ -22,6 +22,9 @@ from chatbot import (
 app = Flask(__name__)
 
 load_dotenv("config/api.env")
+
+#for advanced query 2, I guess
+app.secret_key = os.getenv("FLAS_SECRET_KEY", "dev-secret")
 
 
 def get_db():
@@ -41,8 +44,22 @@ def get_db():
 
 
 # Demo IDs
-DEMO_USER_ID = "62bf9644-c587-11f0-a97c-cda7de604848"
-DEMO_DRUG_ID = "64c8a9c6-c587-11f0-a97c-cda7de604848"
+# DEMO_USER_ID = "62bf9644-c587-11f0-a97c-cda7de604848"
+# DEMO_DRUG_ID = "64c8a9c6-c587-11f0-a97c-cda7de604848"
+
+# Pick a the first user_id from the table for now
+def get_current_user_id() -> str:
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT user_id FROM user LIMIT 1")
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not row:
+        raise RuntimeError("No users in table")
+    
+    return row[0]
 
 
 
@@ -259,6 +276,8 @@ def prescriptions() -> str:
     """List prescriptions for the demo user + load available drugs."""
     conn = get_db()
 
+    current_user_id = get_current_user_id()
+
     # prescriptions
     cur = conn.cursor(dictionary=True)
     cur.execute(
@@ -273,7 +292,8 @@ def prescriptions() -> str:
         JOIN drug d ON p.drug_id = d.drug_id
         WHERE p.user_id = %s
         """,
-        (DEMO_USER_ID,),
+        (current_user_id,),
+        # (DEMO_USER_ID,),
     )
     prescriptions = cur.fetchall()
     cur.close()
@@ -286,11 +306,17 @@ def prescriptions() -> str:
 
     conn.close()
 
+    # To update UI with the prescription count for advanced query 2
+    # prescription_count = session.get("prescription_count")
+    # if prescription_count is None:
+    prescription_count = len(prescriptions)
+
     return render_template(
         "prescriptions.html",
         active_page="prescriptions",
         prescriptions=prescriptions,
         drugs=drugs,
+        prescription_count=prescription_count,
     )
 
 
@@ -338,10 +364,14 @@ def delete_drug(drug_id: str):
 
     return redirect(url_for("prescriptions"))
 
+
+
+# Transaction with two advanced queries
+# Test by creating a prescription
+# Break it by picking a drug_id that doesn't exist by using the browser dev tools
 @app.route("/prescriptions/create", methods=["POST"])
 def create_prescription():
-    """CREATE: add a new prescription for the demo user."""
-    drug_id = request.form["drug_id"]      # <- from dropdown
+    drug_id = request.form["drug_id"]
     frequency = request.form["frequency"]
     qty_on_hand = int(request.form["qty_on_hand"])
     refills = int(request.form["refills"])
@@ -350,18 +380,64 @@ def create_prescription():
     rx_id = str(uuid.uuid4())
 
     conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO prescription
-            (rx_id, user_id, drug_id, frequency, qty_on_hand, refills, rx_text)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """,
-        (rx_id, DEMO_USER_ID, drug_id, frequency, qty_on_hand, refills, rx_text),
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+    # cur = conn.cursor()
+    cur = conn.cursor(dictionary=True)
+
+    current_user_id = get_current_user_id()
+
+    try:
+        conn.start_transaction(isolation_level="READ COMMITTED")
+
+        # First advanced query
+        cur.execute ("""
+            SELECT u.user_id, d.drug_id
+            FROM user AS u
+            JOIN drug AS d ON d.drug_id = %s
+            WHERE u.user_id = %s
+            """, (drug_id, current_user_id),)
+        rows = cur.fetchone()
+        if rows is None:
+            raise ValueError("User/drug doesn't exist")
+        
+        
+        cur.execute("""
+            INSERT INTO prescription
+                    (rx_id, user_id, drug_id, frequency, qty_on_hand, refills, rx_text)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (rx_id, current_user_id, drug_id, frequency, qty_on_hand, refills, rx_text),)
+    
+
+        # Second advanced query
+        cur.execute ("""
+            SELECT user_id, COUNT(*) AS total_prescriptions
+            FROM prescription
+            WHERE user_id = %s
+            GROUP BY user_id
+            """, (current_user_id,),)
+        count_row = cur.fetchone()
+
+        # if count_row is not None:
+        #     total_prescriptions = count_row["total_prescriptions"]
+        #     # print("User has %s prescriptions", total_prescriptions)
+        # else:
+        #     print("could not count prescriptions")
+
+        if count_row is None:
+            raise RuntimeError("Failed to count prescriptions")
+
+        # Updates the UI 
+        total_prescriptions = count_row["total_prescriptions"]
+        session["prescription_count"] = total_prescriptions
+
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        print("create_prescription error")
+    
+    finally:
+        cur.close()
+        conn.close()
 
     return redirect(url_for("prescriptions"))
 
@@ -412,6 +488,8 @@ def reminders() -> str:
     """List reminders with a monthly calendar view."""
     conn = get_db()
 
+    current_user_id = get_current_user_id()
+
     # Get reminders joined with drug info
     cur = conn.cursor(dictionary=True)
     cur.execute(
@@ -424,7 +502,7 @@ def reminders() -> str:
         WHERE r.user_id = %s
         ORDER BY r.remind_time ASC
         """,
-        (DEMO_USER_ID,),
+        (current_user_id,),
     )
     reminders_data = cur.fetchall()
     cur.close()
@@ -439,7 +517,7 @@ def reminders() -> str:
         WHERE p.user_id = %s
         ORDER BY d.name
         """,
-        (DEMO_USER_ID,),
+        (current_user_id,),
     )
     user_prescriptions = cur2.fetchall()
     cur2.close()
@@ -519,6 +597,8 @@ def create_reminder():
     date_str = request.form.get("remind_date")
     time_str = request.form.get("remind_time")
 
+    current_user_id = get_current_user_id()
+
     if not date_str:
         date_str = datetime.date.today().strftime("%Y-%m-%d")
     
@@ -532,7 +612,7 @@ def create_reminder():
         INSERT INTO reminder (reminder_id, user_id, rx_id, remind_time)
         VALUES (%s, %s, %s, %s)
         """,
-        (str(uuid.uuid4()), DEMO_USER_ID, rx_id, full_ts),
+        (str(uuid.uuid4()), current_user_id, rx_id, full_ts),
     )
     conn.commit()
     cur.close()
