@@ -33,8 +33,8 @@ def get_db():
             host="localhost",
             port=3306,
             user="root",
-            password="admin",
-            database="aloo",
+            password="[PASSWORD]",
+            database="[DATABASE_NAME]",
         )
         return conn
     except Exception as e:
