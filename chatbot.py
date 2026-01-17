@@ -9,6 +9,9 @@ import mysql.connector
 import pandas as pd
 from dotenv import load_dotenv
 
+# --- NEW: Import the AI Service ---
+from ml_service import predict_disease_with_ai
+
 # =============================================================================
 # CONFIG
 # =============================================================================
@@ -35,259 +38,86 @@ genai.configure(api_key=GEMINI_API_KEY)
 # =============================================================================
 
 SYMPTOMS = {
-    "abdominal_pain",
-    "abnormal_menstruation",
-    "acidity",
-    "acute_liver_failure",
-    "altered_sensorium",
-    "anxiety",
-    "back_pain",
-    "belly_pain",
-    "blackheads",
-    "bladder_discomfort",
-    "blister",
-    "blood_in_sputum",
-    "bloody_stool",
-    "blurred_and_distorted_vision",
-    "breathlessness",
-    "brittle_nails",
-    "bruising",
-    "burning_micturition",
-    "chest_pain",
-    "chills",
-    "cold_hands_and_feets",
-    "coma",
-    "congestion",
-    "constipation",
-    "continuous_feel_of_urine",
-    "continuous_sneezing",
-    "cough",
-    "cramps",
-    "dark_urine",
-    "dehydration",
-    "depression",
-    "diarrhoea",
-    "dischromic _patches",
-    "distention_of_abdomen",
-    "dizziness",
-    "drying_and_tingling_lips",
-    "enlarged_thyroid",
-    "excessive_hunger",
-    "extra_marital_contacts",
-    "family_history",
-    "fast_heart_rate",
-    "fatigue",
-    "fluid_overload",
-    "foul_smell_of urine",
-    "headache",
-    "high_fever",
-    "hip_joint_pain",
-    "history_of_alcohol_consumption",
-    "increased_appetite",
-    "indigestion",
-    "inflammatory_nails",
-    "internal_itching",
-    "irregular_sugar_level",
-    "irritability",
-    "irritation_in_anus",
-    "itching",
-    "joint_pain",
-    "knee_pain",
-    "lack_of_concentration",
-    "lethargy",
-    "loss_of_appetite",
-    "loss_of_balance",
-    "loss_of_smell",
-    "malaise",
-    "mild_fever",
-    "mood_swings",
-    "movement_stiffness",
-    "mucoid_sputum",
-    "muscle_pain",
-    "muscle_wasting",
-    "muscle_weakness",
-    "nausea",
-    "neck_pain",
-    "nodal_skin_eruptions",
-    "obesity",
-    "pain_behind_the_eyes",
-    "pain_during_bowel_movements",
-    "pain_in_anal_region",
-    "painful_walking",
-    "palpitations",
-    "passage_of_gases",
-    "patches_in_throat",
-    "phlegm",
-    "polyuria",
-    "prominent_veins_on_calf",
-    "puffy_face_and_eyes",
-    "pus_filled_pimples",
-    "receiving_blood_transfusion",
-    "receiving_unsterile_injections",
-    "red_sore_around_nose",
-    "red_spots_over_body",
-    "redness_of_eyes",
-    "restlessness",
-    "runny_nose",
-    "rusty_sputum",
-    "scurring",
-    "shivering",
-    "silver_like_dusting",
-    "sinus_pressure",
-    "skin_peeling",
-    "skin_rash",
-    "slurred_speech",
-    "small_dents_in_nails",
-    "spinning_movements",
-    "spotting_ urination",
-    "stiff_neck",
-    "stomach_bleeding",
-    "stomach_pain",
-    "sunken_eyes",
-    "sweating",
-    "swelled_lymph_nodes",
-    "swelling_joints",
-    "swelling_of_stomach",
-    "swollen_blood_vessels",
-    "swollen_extremeties",
-    "swollen_legs",
-    "throat_irritation",
-    "toxic_look_(typhos)",
-    "ulcers_on_tongue",
-    "unsteadiness",
-    "visual_disturbances",
-    "vomiting",
-    "watering_from_eyes",
-    "weakness_in_limbs",
-    "weakness_of_one_body_side",
-    "weight_gain",
-    "weight_loss",
-    "yellow_crust_ooze",
-    "yellow_urine",
-    "yellowing_of_eyes",
-    "yellowish_skin",
+    "abdominal_pain", "abnormal_menstruation", "acidity", "acute_liver_failure", "altered_sensorium",
+    "anxiety", "back_pain", "belly_pain", "blackheads", "bladder_discomfort", "blister",
+    "blood_in_sputum", "bloody_stool", "blurred_and_distorted_vision", "breathlessness",
+    "brittle_nails", "bruising", "burning_micturition", "chest_pain", "chills",
+    "cold_hands_and_feets", "coma", "congestion", "constipation", "continuous_feel_of_urine",
+    "continuous_sneezing", "cough", "cramps", "dark_urine", "dehydration", "depression",
+    "diarrhoea", "dischromic _patches", "distention_of_abdomen", "dizziness",
+    "drying_and_tingling_lips", "enlarged_thyroid", "excessive_hunger", "extra_marital_contacts",
+    "family_history", "fast_heart_rate", "fatigue", "fluid_overload", "foul_smell_of urine",
+    "headache", "high_fever", "hip_joint_pain", "history_of_alcohol_consumption",
+    "increased_appetite", "indigestion", "inflammatory_nails", "internal_itching",
+    "irregular_sugar_level", "irritability", "irritation_in_anus", "itching", "joint_pain",
+    "knee_pain", "lack_of_concentration", "lethargy", "loss_of_appetite", "loss_of_balance",
+    "loss_of_smell", "malaise", "mild_fever", "mood_swings", "movement_stiffness",
+    "mucoid_sputum", "muscle_pain", "muscle_wasting", "muscle_weakness", "nausea",
+    "neck_pain", "nodal_skin_eruptions", "obesity", "pain_behind_the_eyes",
+    "pain_during_bowel_movements", "pain_in_anal_region", "painful_walking", "palpitations",
+    "passage_of_gases", "patches_in_throat", "phlegm", "polyuria", "prominent_veins_on_calf",
+    "puffy_face_and_eyes", "pus_filled_pimples", "receiving_blood_transfusion",
+    "receiving_unsterile_injections", "red_sore_around_nose", "red_spots_over_body",
+    "redness_of_eyes", "restlessness", "runny_nose", "rusty_sputum", "scurring", "shivering",
+    "silver_like_dusting", "sinus_pressure", "skin_peeling", "skin_rash", "slurred_speech",
+    "small_dents_in_nails", "spinning_movements", "spotting_ urination", "stiff_neck",
+    "stomach_bleeding", "stomach_pain", "sunken_eyes", "sweating", "swelled_lymph_nodes",
+    "swelling_joints", "swelling_of_stomach", "swollen_blood_vessels", "swollen_extremeties",
+    "swollen_legs", "throat_irritation", "toxic_look_(typhos)", "ulcers_on_tongue",
+    "unsteadiness", "visual_disturbances", "vomiting", "watering_from_eyes",
+    "weakness_in_limbs", "weakness_of_one_body_side", "weight_gain", "weight_loss",
+    "yellow_crust_ooze", "yellow_urine", "yellowing_of_eyes", "yellowish_skin",
 }
 
 SPECIALIZATIONS = {
-    "ADDICTION MEDICINE",
-    "ADULT CONGENITAL HEART DISEASE (ACHD)",
-    "ADVANCED HEART FAILURE AND TRANSPLANT CARDIOLOGY",
-    "ALLERGY/IMMUNOLOGY",
-    "ANESTHESIOLOGY",
-    "ANESTHESIOLOGY ASSISTANT",
-    "CARDIAC ELECTROPHYSIOLOGY",
-    "CARDIAC SURGERY",
-    "CARDIOVASCULAR DISEASE (CARDIOLOGY)",
-    "CERTIFIED CLINICAL NURSE SPECIALIST (CNS)",
-    "CERTIFIED NURSE MIDWIFE (CNM)",
-    "CERTIFIED REGISTERED NURSE ANESTHETIST (CRNA)",
-    "CHIROPRACTIC",
-    "CLINICAL PSYCHOLOGIST",
-    "CLINICAL SOCIAL WORKER",
-    "COLORECTAL SURGERY (PROCTOLOGY)",
-    "CRITICAL CARE (INTENSIVISTS)",
-    "DENTAL ANESTHESIOLOGY",
-    "DENTIST",
-    "DERMATOLOGY",
-    "DIAGNOSTIC RADIOLOGY",
-    "EMERGENCY MEDICINE",
-    "ENDOCRINOLOGY",
-    "EPILEPTOLOGISTS",
-    "FAMILY PRACTICE",
-    "GASTROENTEROLOGY",
-    "GENERAL PRACTICE",
-    "GENERAL SURGERY",
-    "GERIATRIC MEDICINE",
-    "GERIATRIC PSYCHIATRY",
-    "GYNECOLOGICAL ONCOLOGY",
-    "HAND SURGERY",
-    "HEMATOLOGY",
-    "HEMATOLOGY/ONCOLOGY",
-    "HEMATOPOIETIC CELL TRANSPLANTATION AND CELLULAR THERAPY",
-    "HOSPICE/PALLIATIVE CARE",
-    "HOSPITALIST",
-    "INFECTIOUS DISEASE",
-    "INTERNAL MEDICINE",
-    "INTERVENTIONAL CARDIOLOGY",
-    "INTERVENTIONAL PAIN MANAGEMENT",
-    "INTERVENTIONAL RADIOLOGY",
-    "MARRIAGE AND FAMILY THERAPIST",
-    "MAXILLOFACIAL SURGERY",
-    "MEDICAL GENETICS AND GENOMICS",
-    "MEDICAL ONCOLOGY",
-    "MEDICAL TOXICOLOGY",
-    "MENTAL HEALTH COUNSELOR",
-    "MICROGRAPHIC DERMATOLOGIC SURGERY (MDS)",
-    "NEPHROLOGY",
-    "NEUROLOGY",
-    "NEUROPSYCHIATRY",
-    "NEUROSURGERY",
-    "NUCLEAR MEDICINE",
-    "NURSE PRACTITIONER",
-    "OBSTETRICS/GYNECOLOGY",
-    "OCCUPATIONAL THERAPIST IN PRIVATE PRACTICE",
-    "OPHTHALMOLOGY",
-    "OPTOMETRY",
-    "ORAL AND MAXILLOFACIAL PATHOLOGY",
-    "ORAL AND MAXILLOFACIAL RADIOLOGY",
-    "ORAL MEDICINE",
-    "ORAL SURGERY",
-    "OROFACIAL PAIN",
-    "ORTHOPEDIC SURGERY",
-    "OSTEOPATHIC MANIPULATIVE MEDICINE",
-    "OTOLARYNGOLOGY",
-    "PAIN MANAGEMENT",
-    "PATHOLOGY",
-    "PEDIATRIC MEDICINE",
-    "PERIODONTICS",
-    "PERIPHERAL VASCULAR DISEASE",
-    "PHYSICAL MEDICINE AND REHABILITATION",
-    "PHYSICAL THERAPIST IN PRIVATE PRACTICE",
-    "PHYSICIAN ASSISTANT",
-    "PLASTIC AND RECONSTRUCTIVE SURGERY",
-    "PODIATRY",
-    "PREVENTIVE MEDICINE",
-    "PROSTHODONTICS",
-    "PSYCHIATRY",
-    "PULMONARY DISEASE",
-    "QUALIFIED AUDIOLOGIST",
-    "QUALIFIED SPEECH LANGUAGE PATHOLOGIST",
-    "RADIATION ONCOLOGY",
-    "REGISTERED DIETITIAN OR NUTRITION PROFESSIONAL",
-    "RHEUMATOLOGY",
-    "SLEEP MEDICINE",
-    "SPORTS MEDICINE",
-    "SURGICAL ONCOLOGY",
-    "THORACIC SURGERY",
-    "UNDERSEA AND HYPERBARIC MEDICINE",
-    "UROLOGY",
-    "VASCULAR SURGERY",
+    "ADDICTION MEDICINE", "ADULT CONGENITAL HEART DISEASE (ACHD)", "ADVANCED HEART FAILURE AND TRANSPLANT CARDIOLOGY",
+    "ALLERGY/IMMUNOLOGY", "ANESTHESIOLOGY", "ANESTHESIOLOGY ASSISTANT", "CARDIAC ELECTROPHYSIOLOGY",
+    "CARDIAC SURGERY", "CARDIOVASCULAR DISEASE (CARDIOLOGY)", "CERTIFIED CLINICAL NURSE SPECIALIST (CNS)",
+    "CERTIFIED NURSE MIDWIFE (CNM)", "CERTIFIED REGISTERED NURSE ANESTHETIST (CRNA)", "CHIROPRACTIC",
+    "CLINICAL PSYCHOLOGIST", "CLINICAL SOCIAL WORKER", "COLORECTAL SURGERY (PROCTOLOGY)",
+    "CRITICAL CARE (INTENSIVISTS)", "DENTAL ANESTHESIOLOGY", "DENTIST", "DERMATOLOGY",
+    "DIAGNOSTIC RADIOLOGY", "EMERGENCY MEDICINE", "ENDOCRINOLOGY", "EPILEPTOLOGISTS",
+    "FAMILY PRACTICE", "GASTROENTEROLOGY", "GENERAL PRACTICE", "GENERAL SURGERY",
+    "GERIATRIC MEDICINE", "GERIATRIC PSYCHIATRY", "GYNECOLOGICAL ONCOLOGY", "HAND SURGERY",
+    "HEMATOLOGY", "HEMATOLOGY/ONCOLOGY", "HEMATOPOIETIC CELL TRANSPLANTATION AND CELLULAR THERAPY",
+    "HOSPICE/PALLIATIVE CARE", "HOSPITALIST", "INFECTIOUS DISEASE", "INTERNAL MEDICINE",
+    "INTERVENTIONAL CARDIOLOGY", "INTERVENTIONAL PAIN MANAGEMENT", "INTERVENTIONAL RADIOLOGY",
+    "MARRIAGE AND FAMILY THERAPIST", "MAXILLOFACIAL SURGERY", "MEDICAL GENETICS AND GENOMICS",
+    "MEDICAL ONCOLOGY", "MEDICAL TOXICOLOGY", "MENTAL HEALTH COUNSELOR",
+    "MICROGRAPHIC DERMATOLOGIC SURGERY (MDS)", "NEPHROLOGY", "NEUROLOGY", "NEUROPSYCHIATRY",
+    "NEUROSURGERY", "NUCLEAR MEDICINE", "NURSE PRACTITIONER", "OBSTETRICS/GYNECOLOGY",
+    "OCCUPATIONAL THERAPIST IN PRIVATE PRACTICE", "OPHTHALMOLOGY", "OPTOMETRY",
+    "ORAL AND MAXILLOFACIAL PATHOLOGY", "ORAL AND MAXILLOFACIAL RADIOLOGY", "ORAL MEDICINE",
+    "ORAL SURGERY", "OROFACIAL PAIN", "ORTHOPEDIC SURGERY", "OSTEOPATHIC MANIPULATIVE MEDICINE",
+    "OTOLARYNGOLOGY", "PAIN MANAGEMENT", "PATHOLOGY", "PEDIATRIC MEDICINE", "PERIODONTICS",
+    "PERIPHERAL VASCULAR DISEASE", "PHYSICAL MEDICINE AND REHABILITATION",
+    "PHYSICAL THERAPIST IN PRIVATE PRACTICE", "PHYSICIAN ASSISTANT",
+    "PLASTIC AND RECONSTRUCTIVE SURGERY", "PODIATRY", "PREVENTIVE MEDICINE", "PROSTHODONTICS",
+    "PSYCHIATRY", "PULMONARY DISEASE", "QUALIFIED AUDIOLOGIST", "QUALIFIED SPEECH LANGUAGE PATHOLOGIST",
+    "RADIATION ONCOLOGY", "REGISTERED DIETITIAN OR NUTRITION PROFESSIONAL", "RHEUMATOLOGY",
+    "SLEEP MEDICINE", "SPORTS MEDICINE", "SURGICAL ONCOLOGY", "THORACIC SURGERY",
+    "UNDERSEA AND HYPERBARIC MEDICINE", "UROLOGY", "VASCULAR SURGERY",
 }
 
 # =============================================================================
 # DB HELPERS
 # =============================================================================
 
-
 def get_mysql_conn():
     return mysql.connector.connect(**MYSQL_CONFIG)
-
 
 # =============================================================================
 # GEMINI
 # =============================================================================
-
 
 def call_gemini(prompt: str) -> str:
     model = genai.GenerativeModel(MODEL_NAME)
     resp = model.generate_content(prompt)
     return (resp.text or "").strip()
 
-
 # =============================================================================
-# SYMPTOM EXTRACTION (unchanged logic)
+# SYMPTOM EXTRACTION
 # =============================================================================
-
 
 def extract_symptoms(user_input: str) -> Tuple[List[str], List[str]]:
     prompt = f"""
@@ -320,39 +150,18 @@ def extract_symptoms(user_input: str) -> Tuple[List[str], List[str]]:
     wrong = [sym for sym in raw_list if sym not in SYMPTOMS]
     return correct, wrong
 
-
 # =============================================================================
-# DISEASE MATCHING (uses disease / symptom / disease_symptom)
+# LEGACY SQL MATCHING (Fallback)
 # =============================================================================
-
 
 def match_diseases(user_symptoms: List[str], top_n: int = 2) -> List[Dict[str, Any]]:
-    """
-    Given a list of symptom_name strings, return top-N matching diseases using the
-    disease_symptom junction.
-
-    Output format matches your previous version:
-    [
-      {
-        "disease": str,
-        "score": int,  # number of matched symptoms
-        "matched_symptoms": [...],
-        "all_symptoms": [...]
-      },
-      ...
-    ]
-    """
     if not user_symptoms:
         return []
 
     conn = get_mysql_conn()
     try:
         cursor = conn.cursor()
-
-        # We use GROUP_CONCAT to get all symptoms for each disease and
-        # a SUM(CASE WHEN ...) to get a match score.
         placeholders = ", ".join(["%s"] * len(user_symptoms))
-
         sql = f"""
             SELECT
                 d.disease_id,
@@ -367,56 +176,38 @@ def match_diseases(user_symptoms: List[str], top_n: int = 2) -> List[Dict[str, A
             ORDER BY match_count DESC
             LIMIT %s
         """
-
         params = list(user_symptoms) + [top_n]
         cursor.execute(sql, params)
 
         results = []
-        for (
-            disease_id,
-            disease_name,
-            all_symptoms_str,
-            match_count,
-        ) in cursor.fetchall():
+        for (did, dname, all_symptoms_str, match_count) in cursor.fetchall():
             all_symptoms_list = all_symptoms_str.split(",") if all_symptoms_str else []
             matched = sorted(set(all_symptoms_list).intersection(user_symptoms))
-            results.append(
-                {
-                    "disease": disease_name,
-                    "score": int(match_count),
-                    "matched_symptoms": matched,
-                    "all_symptoms": sorted(set(all_symptoms_list)),
-                }
-            )
-
+            results.append({
+                "disease": dname,
+                "score": int(match_count),
+                "matched_symptoms": matched,
+                "all_symptoms": sorted(set(all_symptoms_list)),
+            })
         return results
     finally:
         conn.close()
 
-
 # =============================================================================
-# SPECIALTY LOOKUP
+# LOOKUPS
 # =============================================================================
-
 
 def get_specialization(disease: str) -> Optional[str]:
-    """
-    Given a disease_name, return the associated specialty_name (uppercased),
-    or None if not found.
-    """
     conn = get_mysql_conn()
     try:
         cursor = conn.cursor()
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT s.specialty_name
             FROM disease d
             LEFT JOIN specialty s ON d.specialty_id = s.specialty_id
             WHERE d.disease_name = %s
             LIMIT 1
-            """,
-            (disease,),
-        )
+        """, (disease,))
         row = cursor.fetchone()
         if row and row[0]:
             return row[0].strip().upper()
@@ -424,38 +215,16 @@ def get_specialization(disease: str) -> Optional[str]:
     finally:
         conn.close()
 
-
-# =============================================================================
-# DOCTORS LOOKUP
-# =============================================================================
-
-
 def format_phone(ph: Any) -> str:
     ph = "".join(filter(str.isdigit, str(ph)))
     if len(ph) >= 10:
         return f"+1({ph[:3]}){ph[3:7]}-{ph[7:11]}"
     return ph
 
-
-def get_doctors(
-    specialization: str,
-    city: Optional[str] = None,
-    zipcode: Optional[str] = None,
-) -> pd.DataFrame:
-    """
-    Fetch doctors for a given specialization (by name), optionally filtered by city/ZIP.
-
-    - If city is provided, filter by city (case-insensitive exact match).
-    - If zipcode is provided, filter by the *first 5 digits* of the stored ZIP,
-      so '60607' will match '606071234', '60607-1234', etc.
-
-    Returns a pandas DataFrame with columns:
-    FirstName, LastName, Phone, Facility, City, State, ZIP
-    """
+def get_doctors(specialization: str, city: Optional[str] = None, zipcode: Optional[str] = None) -> pd.DataFrame:
     conn = get_mysql_conn()
     try:
         cursor = conn.cursor()
-
         base_sql = """
             SELECT
                 d.first_name    AS FirstName,
@@ -469,197 +238,251 @@ def get_doctors(
             JOIN specialty s ON d.specialty_id = s.specialty_id
             WHERE UPPER(s.specialty_name) = %s
         """
+        params = [specialization.upper()]
 
-        params: List[Any] = [specialization.upper()]
-
-        # Add city filter if provided
         if city:
             base_sql += " AND UPPER(d.city) = %s"
             params.append(city.upper())
 
-        # Add ZIP prefix filter if provided
         if zipcode:
-            # Use only the first 5 characters of what the user typed
             zip_prefix = str(zipcode).strip()[:5]
             if zip_prefix:
-                # LEFT(d.zip_code, 5) works for '60607', '606071234', etc.
                 base_sql += " AND LEFT(d.zip_code, 5) = %s"
                 params.append(zip_prefix)
 
         cursor.execute(base_sql, params)
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
-
         df = pd.DataFrame(rows, columns=columns)
-
         if not df.empty:
             df["Phone"] = df["Phone"].apply(format_phone)
-
         return df
     finally:
         conn.close()
 
-
 # =============================================================================
-# LLM DIAGNOSIS (same logic, different env path)
+# LLM DIAGNOSIS (Fallback)
 # =============================================================================
-
 
 def get_llm_diagnosis(user_input: str) -> Optional[Dict[str, str]]:
     prompt = f"""
         You are a medical assistant. Based on the user's input, determine the most likely disease and the most appropriate medical specialization.
-
         Choose the specialization strictly from this list: {', '.join(SPECIALIZATIONS)}
-
         User Input: "{user_input}"
-
         Output ONLY the final dictionary on a single line.
-        Do NOT include any explanation, internal thinking, reasoning, markdown, tags, or thoughts.
-
-        Only return the dictionary in this format:
-        {{"disease": "<disease_name>", "specialization": "<specialization_from_list>"}}
-
+        Format: {{"disease": "<disease_name>", "specialization": "<specialization_from_list>"}}
         FAIL if you do not follow this format.
     """
-
     content = call_gemini(prompt)
     match = re.search(r"\{.*?\}", content, re.DOTALL)
     if not match:
         return None
-
     try:
         parsed = json.loads(match.group())
     except Exception as e:
         print(f"Error parsing LLM dictionary: {e}")
         return None
 
-    if (
-        isinstance(parsed, dict)
-        and "disease" in parsed
-        and "specialization" in parsed
-        and parsed["specialization"].upper() in SPECIALIZATIONS
-    ):
-        return {
-            "disease": parsed["disease"].strip(),
-            "specialization": parsed["specialization"].strip().upper(),
-        }
-
+    if isinstance(parsed, dict) and "disease" in parsed and "specialization" in parsed:
+        if parsed["specialization"].upper() in SPECIALIZATIONS:
+            return {
+                "disease": parsed["disease"].strip(),
+                "specialization": parsed["specialization"].strip().upper(),
+            }
     return None
 
+# =============================================================================
+# CORE CHAT PIPELINE (The "AI" Integration)
+# =============================================================================
+
+def run_chat_pipeline(
+    user_input: str,
+    city: Optional[str] = None,
+    zipcode: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    End-to-End Pipeline:
+    1. NLP Extraction (Gemini) -> Symptoms
+    2. ML Inference (Random Forest) -> Predicted Disease
+    3. Fallback to LLM or SQL if unsure
+    4. Doctor Lookup
+    """
+
+    # 1. NLP Extraction
+    recognized, unrecognized = extract_symptoms(user_input)
+
+    # 2. AI Inference
+    ai_predictions = predict_disease_with_ai(recognized, top_n=3)
+
+    chosen_disease = None
+    chosen_specialty = None
+    confidence_score = 0.0
+
+    # 3. Decision Logic
+    # If the AI is reasonably confident, trust it.
+    if ai_predictions:
+        top_match = ai_predictions[0]
+        chosen_disease = top_match['disease']
+        confidence_score = top_match['confidence']
+        # Map the predicted disease to a specialty using SQL
+        chosen_specialty = get_specialization(chosen_disease)
+
+    # 4. Fallback: If AI is unsure (low confidence) or missed, ask the LLM directly
+    llm_guess = None
+    if not chosen_disease or confidence_score < 0.3:
+        llm_guess = get_llm_diagnosis(user_input)
+        if llm_guess:
+            chosen_disease = llm_guess["disease"]
+            chosen_specialty = llm_guess["specialization"]
+            # Reset confidence display since this is a generation, not a prediction
+            confidence_score = 0.0
+
+    # --- Build Response ---
+
+    # A. Chat Bubble Response
+    if chosen_disease:
+        if confidence_score > 0:
+            likely_part = f"Based on your symptoms, my analysis (Confidence: {int(confidence_score*100)}%) points to **{chosen_disease}**."
+        else:
+            likely_part = f"Based on what you shared, a possible condition is **{chosen_disease}**."
+    else:
+        likely_part = "I couldn't pinpoint a specific condition from your symptoms alone."
+
+    if chosen_specialty:
+        spec_part = f" You may want to consult a specialist in **{chosen_specialty}**."
+    else:
+        spec_part = " You may want to start with a primary care doctor."
+
+    disclaimer = (
+        " This is informational only and not a medical diagnosis. "
+        "If your symptoms are severe, seek emergency care immediately."
+    )
+    assistant_reply = likely_part + spec_part + disclaimer
+
+    # B. Doctor Lookup
+    doctors_list = []
+    if chosen_specialty:
+        try:
+            df = get_doctors(chosen_specialty, city=city, zipcode=zipcode)
+            for _, row in df.head(10).iterrows():
+                name = f"{str(row.get('FirstName') or '').strip()} {str(row.get('LastName') or '').strip()}"
+                doctors_list.append({
+                    "name": name.strip() or "Unknown name",
+                    "specialty": chosen_specialty,
+                    "facility": str(row.get("Facility") or "").strip(),
+                    "phone": str(row.get("Phone") or "").strip(),
+                    "city": str(row.get("City") or "").strip(),
+                    "state": str(row.get("State") or "").strip(),
+                    "zip": str(row.get("ZIP") or "").strip(),
+                })
+        except Exception as e:
+            print("Doctor lookup failed:", e)
+
+    # C. Summary Panel
+    sections = {}
+    
+    # Likely Condition Section
+    if chosen_disease:
+        sections["likely"] = f"The condition that most closely matches your symptoms is **{chosen_disease}**."
+    else:
+        sections["likely"] = "I could not determine a clear likely condition."
+
+    # 'Why' Section
+    why_lines = []
+    if ai_predictions and confidence_score > 0:
+        why_lines.append(f"AI Model Confidence: **{int(confidence_score*100)}%**")
+        why_lines.append(f"Matched {len(recognized)} symptom(s) from our clinical dataset.")
+    elif llm_guess:
+        why_lines.append(f"An AI clinical model suggested **{llm_guess['disease']}** based on your description.")
+    else:
+        why_lines.append("Insufficient data for a strong prediction.")
+    sections["why"] = why_lines
+
+    sections["symptoms"] = recognized
+    
+    if chosen_specialty:
+        sections["specialty"] = f"Recommended Specialist: **{chosen_specialty}**"
+    else:
+        sections["specialty"] = "Primary Care Physician"
+
+    sections["disclaimer"] = "MediBuddy provides non-diagnostic information. Always consult a licensed professional."
+
+    # Format for the UI list
+    formatted_likely_conditions = []
+    if ai_predictions:
+        formatted_likely_conditions = [
+            {
+                "name": p["disease"],
+                "score": f"{int(p['confidence']*100)}%",
+                "matched_symptoms": recognized
+            }
+            for p in ai_predictions
+        ]
+
+    summary = {
+        "sections": sections,
+        "likely_conditions": formatted_likely_conditions,
+        "symptoms": recognized,
+        "unrecognized": unrecognized,
+    }
+
+    return {
+        "assistant_reply": assistant_reply,
+        "summary": summary,
+        "doctors": doctors_list,
+    }
 
 # =============================================================================
-# UPSERT HELPERS FOR INSERT DISEASE ENTRY
+# UPSERT HELPERS (For Admin/Setup)
 # =============================================================================
-
 
 def _get_or_create_specialty_id(cursor, specialty_name: str) -> str:
     specialty_name = specialty_name.strip()
-    cursor.execute(
-        "SELECT specialty_id FROM specialty WHERE UPPER(specialty_name) = %s",
-        (specialty_name.upper(),),
-    )
+    cursor.execute("SELECT specialty_id FROM specialty WHERE UPPER(specialty_name) = %s", (specialty_name.upper(),))
     row = cursor.fetchone()
-    if row:
-        return row[0]
-
+    if row: return row[0]
     sid = str(uuid.uuid4())
-    cursor.execute(
-        "INSERT INTO specialty (specialty_id, specialty_name) VALUES (%s, %s)",
-        (sid, specialty_name),
-    )
+    cursor.execute("INSERT INTO specialty (specialty_id, specialty_name) VALUES (%s, %s)", (sid, specialty_name))
     return sid
-
 
 def _get_or_create_symptom_id(cursor, symptom_name: str) -> str:
     symptom_name = symptom_name.strip()
-    cursor.execute(
-        "SELECT symptom_id FROM symptom WHERE symptom_name = %s",
-        (symptom_name,),
-    )
+    cursor.execute("SELECT symptom_id FROM symptom WHERE symptom_name = %s", (symptom_name,))
     row = cursor.fetchone()
-    if row:
-        return row[0]
-
+    if row: return row[0]
     sym_id = str(uuid.uuid4())
-    cursor.execute(
-        "INSERT INTO symptom (symptom_id, symptom_name) VALUES (%s, %s)",
-        (sym_id, symptom_name),
-    )
+    cursor.execute("INSERT INTO symptom (symptom_id, symptom_name) VALUES (%s, %s)", (sym_id, symptom_name))
     return sym_id
 
-
-def _get_or_create_disease_id(
-    cursor,
-    disease_name: str,
-    specialty_id: Optional[str],
-) -> str:
+def _get_or_create_disease_id(cursor, disease_name: str, specialty_id: Optional[str]) -> str:
     disease_name = disease_name.strip()
-    cursor.execute(
-        "SELECT disease_id FROM disease WHERE disease_name = %s",
-        (disease_name,),
-    )
+    cursor.execute("SELECT disease_id FROM disease WHERE disease_name = %s", (disease_name,))
     row = cursor.fetchone()
     if row:
         disease_id = row[0]
-        # optionally update specialty if provided
         if specialty_id is not None:
-            cursor.execute(
-                "UPDATE disease SET specialty_id = %s WHERE disease_id = %s",
-                (specialty_id, disease_id),
-            )
+            cursor.execute("UPDATE disease SET specialty_id = %s WHERE disease_id = %s", (specialty_id, disease_id))
         return disease_id
-
     disease_id = str(uuid.uuid4())
-    cursor.execute(
-        "INSERT INTO disease (disease_id, disease_name, specialty_id) VALUES (%s, %s, %s)",
-        (disease_id, disease_name, specialty_id),
-    )
+    cursor.execute("INSERT INTO disease (disease_id, disease_name, specialty_id) VALUES (%s, %s, %s)", (disease_id, disease_name, specialty_id))
     return disease_id
 
-
-# =============================================================================
-# INSERT DISEASE ENTRY (normalized schema)
-# =============================================================================
-
-
-def insert_disease_entry(
-    disease: str, specialization: str, symptoms: List[str]
-) -> None:
-    """
-    Insert or update a disease, its specialization, and its symptom links
-    into the normalized schema.
-
-    - ensures specialty row exists
-    - ensures symptom rows exist
-    - ensures disease row exists
-    - ensures disease_symptom rows exist
-    """
-    if not disease or not specialization:
-        raise ValueError("disease and specialization must be non-empty")
-
+def insert_disease_entry(disease: str, specialization: str, symptoms: List[str]) -> None:
+    if not disease or not specialization: raise ValueError("disease and specialization must be non-empty")
     clean_symptoms = [s.strip() for s in symptoms if s and s.strip()]
-    if not clean_symptoms:
-        raise ValueError("symptoms list must contain at least one non-empty symptom")
-
+    if not clean_symptoms: raise ValueError("symptoms list must contain at least one non-empty symptom")
     conn = get_mysql_conn()
     try:
         cursor = conn.cursor()
-
         spec_id = _get_or_create_specialty_id(cursor, specialization)
         disease_id = _get_or_create_disease_id(cursor, disease, spec_id)
-
         for sym_name in clean_symptoms:
             sym_id = _get_or_create_symptom_id(cursor, sym_name)
-            # use INSERT IGNORE semantics via ON DUPLICATE KEY
-            cursor.execute(
-                """
+            cursor.execute("""
                 INSERT INTO disease_symptom (disease_id, symptom_id)
                 VALUES (%s, %s)
                 ON DUPLICATE KEY UPDATE disease_id = disease_id
-                """,
-                (disease_id, sym_id),
-            )
-
+            """, (disease_id, sym_id))
         conn.commit()
     finally:
         conn.close()
