@@ -71,7 +71,20 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configuration ⚙️
+### 4. 🤖 Train the AI Model (Critical Step)
+*This repository does not contain the pre-trained model files (`.pkl`) because they are large. You must generate them locally.*
+
+1.  **Update DB Credentials for Training:**
+    Open `train_model.py` and update the `MYSQL_CONFIG` dictionary with your MySQL password.
+
+2.  **Run the Training Script:**
+    This will fetch data from your SQL database, generate synthetic patients, and train the Random Forest model.
+    ```bash
+    python train_model.py
+    ```
+    *Success Message:* `Done! You now have an AI model.` (You should see `model_forest.pkl` and `model_encoder.pkl` appear in your folder).
+
+### 5. Configuration ⚙️
 You need to manually connect the application to your local database and API keys.
 
 1.  **API Keys:**
